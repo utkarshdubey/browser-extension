@@ -22,6 +22,47 @@ const TaskUI = () => {
   const [blobURL, setBlobURL] = useState('');
   const [isBlocked, setIsBlocked] = useState(false);
 
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => {
+        console.log('Permission Granted');
+        setIsBlocked(false);
+      })
+      .catch(() => {
+        console.log('Permission Denied');
+        setIsBlocked(true);
+      });
+  }, []);
+
+  const taskInProgress = state.taskStatus === 'running';
+
+  const toast = useToast();
+
+  const toastError = useCallback(
+    (message: string) => {
+      toast({
+        title: 'Error',
+        description: message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+    [toast]
+  );
+
+  const runTask = () => {
+    state.instructions && state.runTask(toastError);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      runTask();
+    }
+  };
+
   const toggleRecording = () => {
     if (isBlocked) {
       console.log('Permission Denied');
@@ -64,54 +105,16 @@ const TaskUI = () => {
             console.log('Success:', data);
             if (data.transcript) {
               state.setInstructions(data.transcript);
+              state.runTask((e: any) => {
+                console.error(e);
+              });
             }
           })
           .catch((error) => {
             console.error('Error:', error);
           });
       })
-      .catch((e) => console.error(e));
-  };
-
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
-        console.log('Permission Granted');
-        setIsBlocked(false);
-      })
-      .catch(() => {
-        console.log('Permission Denied');
-        setIsBlocked(true);
-      });
-  }, []);
-
-  const taskInProgress = state.taskStatus === 'running';
-
-  const toast = useToast();
-
-  const toastError = useCallback(
-    (message: string) => {
-      toast({
-        title: 'Error',
-        description: message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    },
-    [toast]
-  );
-
-  const runTask = () => {
-    state.instructions && state.runTask(toastError);
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      runTask();
-    }
+      .catch((e: any) => console.error(e));
   };
 
   return (
